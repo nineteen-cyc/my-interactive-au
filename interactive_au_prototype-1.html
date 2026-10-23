@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Interactive AU · 手机解锁原型</title>
+<style>
+:root{color-scheme:dark;--bg:#08090b;--panel:#17181b;--text:#f6f6f7;--muted:#a4a5aa;--accent:#e9e9ec;--line:#34353a}
+*{box-sizing:border-box}body{margin:0;background:#101114;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh;display:grid;place-items:center;padding:18px}
+.phone{width:min(100%,390px);height:min(820px,calc(100dvh - 36px));min-height:620px;border:7px solid #222328;border-radius:48px;background:var(--bg);box-shadow:0 20px 70px #0009;overflow:hidden;position:relative}
+.status{height:48px;padding:17px 24px 0;display:flex;justify-content:space-between;font-weight:650;font-size:14px}
+.screen{height:calc(100% - 48px);padding:20px 22px 28px;display:flex;flex-direction:column;position:relative}
+.wallpaper{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,#3a3835 0%,#161616 36%,#050505 75%);opacity:.8;pointer-events:none}
+.screen>*:not(.wallpaper){position:relative}
+.clock{text-align:center;font-size:60px;letter-spacing:-2px;font-weight:300;margin-top:20px}.date{text-align:center;color:#ddd;margin-top:3px}
+.lockicon{text-align:center;margin-top:auto;margin-bottom:12px;font-size:20px;color:#ddd}
+.prompt{text-align:center;font-size:19px;font-weight:600;margin:16px 0 24px}
+.dots{display:flex;justify-content:center;gap:14px;margin-bottom:36px}.dot{width:11px;height:11px;border:1.5px solid #666;border-radius:50%}.dot.filled{background:#f4f4f4;border-color:#f4f4f4}
+.keypad{display:grid;grid-template-columns:repeat(3,72px);justify-content:center;gap:14px 20px}
+.key{border:0;border-radius:50%;width:72px;height:72px;background:#ffffff13;color:white;font-size:30px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
+.key small{font-size:9px;letter-spacing:2px;margin-top:1px}.key:active{background:#ffffff35}.zero{grid-column:2}
+.cancel{margin-top:auto;align-self:flex-end;background:none;border:0;color:#eee;font-size:15px;padding:12px 20px;cursor:pointer}
+.home{display:none;overflow:auto;padding:0 0 18px}.home.show{display:block}.lock.hidden{display:none}
+.apphead{display:flex;align-items:center;gap:12px;margin:5px 0 22px}.avatar{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#b6b0a6,#4a4a4a);display:grid;place-items:center;font-size:20px}.sub{color:var(--muted);font-size:12px;margin-top:3px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:22px 0 26px}.app{border:0;background:none;color:white;text-align:center;cursor:pointer;font-size:11px}.app span{display:grid;place-items:center;margin:0 auto 7px;width:54px;height:54px;border-radius:15px;font-size:25px;background:linear-gradient(145deg,#45464b,#222328);border:1px solid #ffffff14}
+.card{background:#191a1e;border:1px solid #292a2f;border-radius:18px;padding:16px;margin-bottom:12px}.card h3{margin:0 0 9px;font-size:16px}.card p{line-height:1.55;margin:7px 0;color:#e1e1e4;font-size:14px}.pill{display:inline-block;font-size:11px;color:#c7c7cc;border:1px solid #44454a;border-radius:20px;padding:5px 9px;margin:3px 4px 0 0}
+.back{background:none;border:1px solid #414248;border-radius:20px;color:#eee;padding:8px 12px;margin-bottom:14px;cursor:pointer}.hiddenpage{display:none}.hiddenpage.active{display:block}
+.message{padding:10px 12px;border-radius:15px;margin:8px 0;max-width:84%;font-size:14px;line-height:1.4}.left{background:#303136}.right{background:#d9d9de;color:#17171a;margin-left:auto}
+.post{border-bottom:1px solid #33343a;padding:14px 0}.post strong{font-size:14px}.post p{font-size:14px;line-height:1.5}.actions{color:#aaa;font-size:12px}
+.editor{margin-top:20px;border-top:1px solid #333;padding-top:14px}.editor summary{cursor:pointer;color:#c5c5ca}.editor label{display:block;font-size:12px;color:#b8b8bf;margin:12px 0 5px}.editor input,.editor textarea{width:100%;background:#101114;color:white;border:1px solid #414248;border-radius:10px;padding:10px;font:inherit}.editor textarea{min-height:70px;resize:vertical}.save{background:#f1f1f3;color:#111;border:0;border-radius:12px;padding:10px 14px;margin-top:12px;cursor:pointer;font-weight:650}.note{font-size:11px;color:#8f9097;line-height:1.5;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="phone">
+ <div class="status"><span>23:03</span><span>● ▮▮ ▰</span></div>
+ <main class="screen">
+  <div class="wallpaper"></div>
+  <section class="lock" id="lock">
+   <div class="clock">23:03</div><div class="date" id="date">10月24日 星期六</div>
+   <div class="lockicon">⌑</div>
+   <div class="prompt">암호 입력</div>
+   <div class="dots" id="dots"><i class="dot"></i><i class="dot"></i><i class="dot"></i><i class="dot"></i></div>
+   <div class="keypad">
+    <button class="key" data-n="1">1</button><button class="key" data-n="2">2<small>ABC</small></button><button class="key" data-n="3">3<small>DEF</small></button>
+    <button class="key" data-n="4">4<small>GHI</small></button><button class="key" data-n="5">5<small>JKL</small></button><button class="key" data-n="6">6<small>MNO</small></button>
+    <button class="key" data-n="7">7<small>PQRS</small></button><button class="key" data-n="8">8<small>TUV</small></button><button class="key" data-n="9">9<small>WXYZ</small></button>
+    <button class="key zero" data-n="0">0</button>
+   </div>
+   <button class="cancel" id="cancel">取消</button>
+  </section>
+  <section class="home" id="home">
+   <div class="apphead"><div class="avatar" id="avatar">✦</div><div><strong id="owner">UNKNOWN 的 iPhone</strong><div class="sub">仅供 AU 故事体验 · 已解锁</div></div></div>
+   <div class="grid">
+    <button class="app" data-page="messages"><span>☏</span>消息</button>
+    <button class="app" data-page="photos"><span>▧</span>照片</button>
+    <button class="app" data-page="social"><span>◎</span>社交动态</button>
+    <button class="app" data-page="notes"><span>▤</span>备忘录</button>
+   </div>
+   <section id="mainpage">
+    <div class="card"><h3>最近活动</h3><p>23:01　收到一条未读消息</p><p>22:46　保存了一张照片</p><p>21:18　发布了一条动态</p></div>
+    <div class="card"><h3>线索提示</h3><p id="hint">有些秘密，就藏在最普通的聊天记录里。</p><span class="pill">EP.01</span><span class="pill">MYSTERY AU</span></div>
+   </section>
+   <section id="messages" class="hiddenpage"><button class="back">‹ 返回</button><h3>消息 · 2个对话</h3><div class="card"><strong id="friend">J.</strong><div class="sub">今天 23:01</div><div class="message left" id="msg1">你今天为什么没有来？</div><div class="message right" id="msg2">我去了，只是你没看到。</div><div class="message left" id="msg3">那你为什么把那张照片删了？</div></div></section>
+   <section id="photos" class="hiddenpage"><button class="back">‹ 返回</button><h3>照片 · 最近项目</h3><div class="card"><div style="height:170px;border-radius:12px;background:linear-gradient(145deg,#33343a,#101114);display:grid;place-items:center;font-size:48px">🌙</div><p id="photoCaption">一张夜晚拍摄的照片</p><div class="sub">昨天 22:46 · 需要进一步调查</div></div><div class="card"><h3>隐藏相簿</h3><p>🔒　需要另一个线索才能查看</p></div></section>
+   <section id="social" class="hiddenpage"><button class="back">‹ 返回</button><h3>社交动态</h3><div class="card"><div class="post"><strong>@unknown_01</strong><div class="sub">21:18 · 公开</div><p id="post1">有些人明明就在眼前，却像从来没认识过。</p><div class="actions">♡ 128　 ◯ 36　 ↗ 17</div></div><div class="post"><strong>@friend_a</strong><div class="sub">21:24 · 公开</div><p id="post2">你们两个到底发生什么了？</p><div class="actions">♡ 42　 ◯ 9</div></div></div></section>
+   <section id="notes" class="hiddenpage"><button class="back">‹ 返回</button><h3>备忘录</h3><div class="card"><h3 id="noteTitle">不要忘记那一天</h3><p id="noteBody">如果你看到这里，说明你已经发现不对劲了。去看看聊天记录里的日期。</p></div></section>
+   <details class="editor"><summary>✎ 编辑 AU 内容（作者设置）</summary>
+    <label>四位解锁密码</label><input id="editPin" inputmode="numeric" maxlength="4" value="0725">
+    <label>手机主人名称</label><input id="editOwner" value="UNKNOWN 的 iPhone">
+    <label>聊天第一句</label><input id="editMsg" value="你今天为什么没有来？">
+    <label>聊天第二句</label><input id="editReply" value="我去了，只是你没看到。">
+    <label>社交动态</label><textarea id="editPost">有些人明明就在眼前，却像从来没认识过。</textarea>
+    <label>备忘录内容</label><textarea id="editNote">如果你看到这里，说明你已经发现不对劲了。去看看聊天记录里的日期。</textarea>
+    <button class="save" id="save">保存设定</button>
+    <p class="note">提示：这是本地演示原型。密码和内容保存在当前页面运行状态中；刷新后会恢复默认值。要公开给别人访问，需要把网页文件部署到 GitHub Pages 等静态托管服务。</p>
+   </details>
+  </section>
+ </main>
+</div>
+<script>
+let pin="0725", entered="";
+const $=id=>document.getElementById(id);
+function renderDots(){document.querySelectorAll(".dot").forEach((d,i)=>d.classList.toggle("filled",i<entered.length))}
+function enterDigit(n){if(entered.length>=4)return;entered+=n;renderDots();if(entered.length===4){if(entered===pin){$("lock").classList.add("hidden");$("home").classList.add("show")}else{setTimeout(()=>{entered="";renderDots();$("date").textContent="密码错误，请重试"},350)}}}
+document.querySelectorAll("[data-n]").forEach(b=>b.addEventListener("click",()=>enterDigit(b.dataset.n)));
+$("cancel").addEventListener("click",()=>{entered="";renderDots()});
+document.querySelectorAll(".app").forEach(b=>b.addEventListener("click",()=>{ $("mainpage").style.display="none";document.querySelectorAll(".hiddenpage").forEach(s=>s.classList.remove("active"));$(b.dataset.page).classList.add("active")}));
+document.querySelectorAll(".back").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".hiddenpage").forEach(s=>s.classList.remove("active"));$("mainpage").style.display="block"}));
+$("save").addEventListener("click",()=>{const v=$("editPin").value.replace(/\D/g,"").slice(0,4);if(v.length!==4){alert("密码需要是4位数字");return}pin=v;$("owner").textContent=$("editOwner").value||"UNKNOWN 的 iPhone";$("msg1").textContent=$("editMsg").value;$("msg2").textContent=$("editReply").value;$("post1").textContent=$("editPost").value;$("noteBody").textContent=$("editNote").value;alert("设定已应用到当前演示页面")});
+</script>
+</body></html>
